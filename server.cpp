@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
 		// ip address
 		buffer[len] = '\0';
 		printf("received: '%s' from client %s\n", buffer,
-		       inet_ntoa(client_address.sin_addr));
+		       inet_ntoa(client_address.sin_addr), sizeof(buffer));
 
 		// send same content back to the client ("echo")
 		sendto(sock, buffer, len, 0, (struct sockaddr *)&client_address,

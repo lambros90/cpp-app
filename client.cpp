@@ -3,10 +3,13 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <iostream>
+
+using namespace std;
 
 int main() {
-	const char* server_name = "localhost";
-	const int server_port = 8877;
+	const char* server_name = "15.222.225.104";
+	const int server_port = 8877; // na dokimasw kai allh porta
 
 	struct sockaddr_in server_address;
 	memset(&server_address, 0, sizeof(server_address));
@@ -28,19 +31,38 @@ int main() {
 	}
 
 	// data that will be sent to the server
-	const char* data_to_send = "Gangadhar Hi Shaktimaan hai";
+	const char* data_to_send = "ermis test";
+    // const char data_to_send = "ermis test";
 
 	// send data
 	int len =
 	    sendto(sock, data_to_send, strlen(data_to_send), 0,
 	           (struct sockaddr*)&server_address, sizeof(server_address));
 
-	// received echoed data back
-	char buffer[100];
-	recvfrom(sock, buffer, len, 0, NULL, NULL);
+    for (int i=1; i<=10; i++){
+        int len = sendto(sock, data_to_send, strlen(data_to_send), 0, 
+        (struct sockaddr*)&server_address, sizeof(server_address));
+        // received echoed data back
+        char buffer[100];
 
-	buffer[len] = '\0';
-	printf("recieved: '%s'\n", buffer);
+
+        recvfrom(sock, buffer, len, 0, NULL, NULL);
+
+        buffer[len] = '\0';
+        printf("received: '%s'\n", buffer);
+    }
+
+
+	// // received echoed data back
+	// char buffer[100];
+
+
+    // recvfrom(sock, buffer, len, 0, NULL, NULL);
+
+	// buffer[len] = '\0';
+	// printf("received: '%s'\n", buffer);
+
+    // int x = 0;
 
 	// close the socket
 	close(sock);
