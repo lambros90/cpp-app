@@ -53,8 +53,8 @@ int main(int argc, char *argv[]) {
 		printf("received: '%s' from client %s\n", buffer,
 		       inet_ntoa(client_address.sin_addr));
 		
-		printf("bytes", sizeof(buffer));
-		printf("bytes", strlen(buffer));
+		printf("bytes %s\n", sizeof(buffer));
+		printf("bytes %s\n", strlen(buffer));
 		// printf("bytes", sizeof(buffer));
 
 		// send same content back to the client ("echo")
