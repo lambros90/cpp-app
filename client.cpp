@@ -1,49 +1,48 @@
-// Client side implementation of UDP client-server model 
-#include <stdio.h> 
-#include <stdlib.h> 
-#include <unistd.h> 
-#include <string.h> 
-#include <sys/types.h> 
-#include <sys/socket.h> 
-#include <arpa/inet.h> 
-#include <netinet/in.h> 
+#include <arpa/inet.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
-#define PORT	 8080 
-#define MAXLINE 1024 
+int main() {
+	const char* server_name = "localhost";
+	const int server_port = 8877;
 
-// Driver code 
-int main() { 
-	int sockfd; 
-	char buffer[MAXLINE]; 
-	char *hello = "Hello from client"; 
-	struct sockaddr_in	 servaddr; 
+	struct sockaddr_in server_address;
+	memset(&server_address, 0, sizeof(server_address));
+	server_address.sin_family = AF_INET;
 
-	// Creating socket file descriptor 
-	if ( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
-		perror("socket creation failed"); 
-		exit(EXIT_FAILURE); 
-	} 
+	// creates binary representation of server name
+	// and stores it as sin_addr
+	// http://beej.us/guide/bgnet/output/html/multipage/inet_ntopman.html
+	inet_pton(AF_INET, server_name, &server_address.sin_addr);
 
-	memset(&servaddr, 0, sizeof(servaddr)); 
-	
-	// Filling server information 
-	servaddr.sin_family = AF_INET; 
-	servaddr.sin_port = htons(PORT); 
-	servaddr.sin_addr.s_addr = INADDR_ANY; 
-	
-	int n, len; 
-	
-	sendto(sockfd, (const char *)hello, strlen(hello), 
-		MSG_CONFIRM, (const struct sockaddr *) &servaddr, 
-			sizeof(servaddr)); 
-	printf("Hello message sent.\n"); 
-		
-	n = recvfrom(sockfd, (char *)buffer, MAXLINE, 
-				MSG_WAITALL, (struct sockaddr *) &servaddr, 
-				&len); 
-	buffer[n] = '\0'; 
-	printf("Server : %s\n", buffer); 
+	// htons: port in network order format
+	server_address.sin_port = htons(server_port);
 
-	close(sockfd); 
-	return 0; 
-} 
+	// open socket
+	int sock;
+	if ((sock = socket(PF_INET, SOCK_DGRAM, 0)) < 0) {
+		printf("could not create socket\n");
+		return 1;
+	}
+
+	// data that will be sent to the server
+	const char* data_to_send = "Gangadhar Hi Shaktimaan hai";
+
+	// send data
+	int len =
+	    sendto(sock, data_to_send, strlen(data_to_send), 0,
+	           (struct sockaddr*)&server_address, sizeof(server_address));
+
+	// received echoed data back
+	char buffer[100];
+	recvfrom(sock, buffer, len, 0, NULL, NULL);
+
+	buffer[len] = '\0';
+	printf("recieved: '%s'\n", buffer);
+
+	// close the socket
+	close(sock);
+	return 0;
+}

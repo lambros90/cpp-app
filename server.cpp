@@ -1,58 +1,62 @@
-// Server side implementation of UDP client-server model 
-#include <stdio.h> 
-#include <stdlib.h> 
-#include <unistd.h> 
-#include <string.h> 
-#include <sys/types.h> 
-#include <sys/socket.h> 
-#include <arpa/inet.h> 
-#include <netinet/in.h> 
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
 
-#define PORT	 8080 
-#define MAXLINE 1024 
+int main(int argc, char *argv[]) {
+	// port to start the server on
+	int SERVER_PORT = 8877;
 
-// Driver code 
-int main() { 
-	int sockfd; 
-	char buffer[MAXLINE]; 
-	char *hello = "Hello from server"; 
-	struct sockaddr_in servaddr, cliaddr; 
-	
-	// Creating socket file descriptor 
-	if ( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
-		perror("socket creation failed"); 
-		exit(EXIT_FAILURE); 
-	} 
-	
-	memset(&servaddr, 0, sizeof(servaddr)); 
-	memset(&cliaddr, 0, sizeof(cliaddr)); 
-	
-	// Filling server information 
-	servaddr.sin_family = AF_INET; // IPv4 
-	servaddr.sin_addr.s_addr = INADDR_ANY; 
-	servaddr.sin_port = htons(PORT); 
-	
-	// Bind the socket with the server address 
-	if ( bind(sockfd, (const struct sockaddr *)&servaddr, 
-			sizeof(servaddr)) < 0 ) 
-	{ 
-		perror("bind failed"); 
-		exit(EXIT_FAILURE); 
-	} 
-	
-	int len, n; 
+	// socket address used for the server
+	struct sockaddr_in server_address;
+	memset(&server_address, 0, sizeof(server_address));
+	server_address.sin_family = AF_INET;
 
-	len = sizeof(cliaddr); //len is value/resuslt 
+	// htons: host to network short: transforms a value in host byte
+	// ordering format to a short value in network byte ordering format
+	server_address.sin_port = htons(SERVER_PORT);
 
-	n = recvfrom(sockfd, (char *)buffer, MAXLINE, 
-				MSG_WAITALL, ( struct sockaddr *) &cliaddr, 
-				&len); 
-	buffer[n] = '\0'; 
-	printf("Client : %s\n", buffer); 
-	sendto(sockfd, (const char *)hello, strlen(hello), 
-		MSG_CONFIRM, (const struct sockaddr *) &cliaddr, 
-			len); 
-	printf("Hello message sent.\n"); 
-	
-	return 0; 
-} 
+	// htons: host to network long: same as htons but to long
+	server_address.sin_addr.s_addr = htonl(INADDR_ANY);
+
+	// create a UDP socket, creation returns -1 on failure
+	int sock;
+	if ((sock = socket(PF_INET, SOCK_DGRAM, 0)) < 0) {
+		printf("could not create socket\n");
+		return 1;
+	}
+
+	// bind it to listen to the incoming connections on the created server
+	// address, will return -1 on error
+	if ((bind(sock, (struct sockaddr *)&server_address,
+	          sizeof(server_address))) < 0) {
+		printf("could not bind socket\n");
+		return 1;
+	}
+
+	// socket address used to store client address
+	struct sockaddr_in client_address;
+	int client_address_len = 0;
+
+	// run indefinitely
+	while (true) {
+		char buffer[500];
+
+		// read content into buffer from an incoming client
+		int len = recvfrom(sock, buffer, sizeof(buffer), 0,
+		                   (struct sockaddr *)&client_address,(socklen_t*)&client_address_len);
+
+		// inet_ntoa prints user friendly representation of the
+		// ip address
+		buffer[len] = '\0';
+		printf("received: '%s' from client %s\n", buffer,
+		       inet_ntoa(client_address.sin_addr));
+
+		// send same content back to the client ("echo")
+		sendto(sock, buffer, len, 0, (struct sockaddr *)&client_address,
+		       sizeof(client_address));
+	}
+
+	return 0;
+}
